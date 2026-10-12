@@ -14,8 +14,8 @@
   --columns-team: 2;
   --columns-contact: 2;
   --columns-footer: 1;
-  --logo-height: 32px;
-  --logo-height-compact: 32px;
+  --logo-height: 40px;
+  --logo-height-compact: 36px;
 }
 
 /* Native media queries cannot consume custom properties. Keep these literal
@@ -34,8 +34,8 @@
     --columns-team: 3;
     --columns-contact: 3;
     --columns-footer: 2;
-    --logo-height: 36px;
-    --logo-height-compact: 36px;
+    --logo-height: 44px;
+    --logo-height-compact: 40px;
   }
 }
 
@@ -51,7 +51,8 @@
     --columns-team: 4;
     --columns-contact: 4;
     --columns-footer: 4;
-    --logo-height: 44px;
+    --logo-height: 56px;
+    --logo-height-compact: 44px;
   }
 }
 

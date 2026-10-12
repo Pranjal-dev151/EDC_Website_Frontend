@@ -38,7 +38,9 @@
 .contactText { color: var(--color-secondary); font-size: var(--text-sm); max-inline-size: 28ch; }
 .socials { display: flex; flex-wrap: wrap; gap: 12px; font-size: var(--text-xs); font-family: var(--font-mono); }
 
-.bottom { margin-block-start: var(--space-7); padding-block-start: var(--space-5); border-block-start: 1px solid var(--color-border); }
+.bottom { margin-block-start: var(--space-7); padding-block-start: var(--space-5); border-block-start: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.adminLink { font-size: var(--text-xs); color: var(--color-muted); text-decoration: none; min-block-size: 0; margin-inline-start: auto; }
+.adminLink:hover { color: var(--color-secondary); }
 
 .success { color: #6fdc8c; font-size: var(--text-xs); }
 .error { color: #ff8a94; font-size: var(--text-xs); }

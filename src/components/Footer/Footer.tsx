@@ -57,6 +57,7 @@ export default function Footer({ data }: { data: FooterData }) {
       </div>
       <div className={`container ${styles.bottom}`}>
         <p className="eyebrow">© {new Date().getFullYear()} {data.copyrightHolder}</p>
+        <Link className={styles.adminLink} to="/admin/login">Admin Login</Link>
       </div>
     </footer>
   );

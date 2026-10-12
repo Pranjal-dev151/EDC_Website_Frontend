@@ -47,7 +47,7 @@ export default function App() {
       <span className="header-top-marker" data-header-top aria-hidden="true" />
       {header && <Header key={pathname} content={header} />}
       {socials && pathname === '/' && <SocialRail links={socials} />}
-      <main id="main-content" className="site-main" tabIndex={-1}>
+      <main id="main-content" className={`site-main${pathname === '/' ? ' site-main--home' : ' site-main--inner'}`} tabIndex={-1}>
         {error && <div className="container section" role="alert"><p>Navigation could not be loaded.</p><button type="button" onClick={retry}>Try again</button></div>}
         <Routes>
           <Route path="/" element={<Home />} />

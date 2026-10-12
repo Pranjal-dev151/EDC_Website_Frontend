@@ -14,6 +14,7 @@ export default function Header({ content }: { content: HeaderContent }) {
   const isAuth = pathname === '/login' || pathname === '/register';
   const items = isAuth ? content.navigation.auth : pathname === '/' ? content.navigation.home : content.navigation.inner;
   const [state, setState] = useState<HeaderState>('A');
+  const [scrolled, setScrolled] = useState(false);
   const [layout, setLayout] = useState<'drawer' | 'full'>('drawer');
   const [panel, setPanel] = useState<OpenPanel>('none');
   const shell = useRef<HTMLDivElement>(null);
@@ -129,12 +130,19 @@ export default function Header({ content }: { content: HeaderContent }) {
   }, [items]);
 
   useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
     if (layout === 'full') setPanel((current) => current === 'mobile' ? 'none' : current);
   }, [layout]);
 
   return (
     <>
-      <header className="edc-header" data-state={state} data-layout={layout} aria-label="Site header">
+      <header className={`edc-header${scrolled ? ' is-scrolled' : ''}`} data-state={state} data-layout={layout} aria-label="Site header">
         <div className="edc-header__shell" ref={shell}>
           <Link className="edc-header__logo" to="/" aria-label={`${content.name} — Home`} ref={logo} onClick={closePanel}>
             <img src="/edc-logo.svg" alt={content.logo.alt} width={content.logo.width} height={content.logo.height} />

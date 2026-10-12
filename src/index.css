@@ -78,6 +78,7 @@ body { margin: 0; min-inline-size: 0; background: var(--color-bg); color: var(--
 #root { min-block-size: 100svh; isolation: isolate; }
 .header-top-marker { position: absolute; inset-block-start: 0; inset-inline-start: 0; inline-size: 1px; block-size: 1px; pointer-events: none; }
 .site-main { padding-block-start: 96px; }
+.site-main--home { padding-block-start: 0; }
 .site-main:focus:not(:focus-visible) { outline: none; }
 h1, h2, h3, h4, p { margin: 0; }
 h1, h2, h3, h4 { text-wrap: balance; letter-spacing: var(--tracking-heading); }
