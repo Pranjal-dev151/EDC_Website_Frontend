@@ -6,8 +6,14 @@ function formatDate(value: string) {
 }
 
 function getPreview(blog: Blog): string {
-  if (blog.excerpt.trim()) return blog.excerpt;
+  if (import.meta.env.DEV) {
+    // Troubleshooting: verify exact API field names (excerpt/content/body/description)
+    // eslint-disable-next-line no-console
+    console.log('blog object:', blog);
+  }
+  if (blog.excerpt?.trim()) return blog.excerpt;
   const body = (blog.content ?? '').trim().replace(/\s+/g, ' ');
+  if (!body) return '';
   if (body.length <= 150) return body;
   return `${body.slice(0, 150).trimEnd()}...`;
 }

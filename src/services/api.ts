@@ -8,6 +8,7 @@ import { initiatives } from '../data/initiatives';
 import { headerContent, siteSettings } from '../data/siteSettings';
 import { socials } from '../data/socials';
 import { team } from '../data/team';
+import { getBlogExtras } from './adminApi';
 import type {
   AboutContent,
   Blog,
@@ -71,16 +72,30 @@ export async function getEvents(signal?: AbortSignal): Promise<Event[]> {
   }
 }
 
+function withBlogExtras(list: Blog[]): Blog[] {
+  // Admin-saved full content + gallery live in local extras (backend BlogOut
+  // has no content field yet) — merge them so cards/modals can render them.
+  return list.map((b) => {
+    const extras = getBlogExtras(b.id);
+    return {
+      ...b,
+      excerpt: b.excerpt ?? '',
+      content: extras.content ?? b.content,
+      secondaryImages: extras.secondaryImages ?? b.secondaryImages,
+    };
+  });
+}
+
 export async function getBlogs(signal?: AbortSignal): Promise<Blog[]> {
-  if (!API_URL) return blogs;
+  if (!API_URL) return withBlogExtras(blogs);
   const s = signal ?? new AbortController().signal;
   try {
     const res = await fetch(`${API_URL.replace(/\/$/, '')}/api/blogs`, { signal: s });
     if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-    return (await res.json()) as Blog[];
+    return withBlogExtras((await res.json()) as Blog[]);
   } catch (err) {
     if (s.aborted) throw err;
-    return blogs;
+    return withBlogExtras(blogs);
   }
 }
 
