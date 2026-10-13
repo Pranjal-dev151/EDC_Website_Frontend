@@ -119,7 +119,6 @@ export default function AdminBlogs() {
   function validate(f: BlogForm): string | null {
     if (!f.title.trim()) return 'Title is required.';
     if (!f.author.trim()) return 'Author is required.';
-    if (!f.excerpt.trim()) return 'Excerpt is required.';
     if (!f.published_at) return 'Publish date is required.';
     if (!f.category.trim()) return 'Category is required.';
     if (!f.content.trim()) return 'Blog content is required.';
@@ -224,8 +223,8 @@ export default function AdminBlogs() {
             </div>
           </div>
           <div className={styles.field}>
-            <label htmlFor="blog-excerpt">Excerpt *</label>
-            <textarea id="blog-excerpt" value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} rows={3} required />
+            <label htmlFor="blog-excerpt">Preview Content (optional)</label>
+            <textarea id="blog-excerpt" value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} rows={3} placeholder="Shown on the card. Leave empty to auto-preview from Blog Content." />
           </div>
           <div className={styles.field}>
             <label htmlFor="blog-date">Publish Date *</label>

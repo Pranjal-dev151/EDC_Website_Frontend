@@ -1,5 +1,9 @@
 .overlay { position: fixed; inset: 0; z-index: var(--z-dialog); display: flex; align-items: center; justify-content: center; padding: var(--space-4); background: rgb(0 0 0 / 80%); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-.window { position: relative; inline-size: 100%; max-inline-size: 760px; max-block-size: 88vh; overflow-y: auto; background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-panel); padding: var(--space-6); display: grid; gap: var(--space-4); }
+.window { position: relative; inline-size: 100%; max-inline-size: 900px; max-block-size: 88vh; overflow-y: auto; background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-panel); padding: 3rem 4rem; display: grid; gap: var(--space-4); }
+.content { max-inline-size: 800px; margin-inline: auto; inline-size: 100%; }
+@media (max-width: 640px) {
+  .window { padding: var(--space-5); }
+}
 .close { position: sticky; inset-block-start: 0; margin-inline-start: auto; inline-size: var(--touch-target); block-size: var(--touch-target); min-block-size: var(--touch-target); border-radius: var(--radius-pill); background: var(--color-surface-raised); color: var(--color-text); border: 1px solid var(--color-border-strong); font-size: 20px; line-height: 1; }
 .title { font-size: var(--text-2xl); line-height: var(--leading-2xl); }
 .author { color: var(--color-muted); font-size: var(--text-xs); font-family: var(--font-mono); }

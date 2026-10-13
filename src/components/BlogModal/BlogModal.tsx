@@ -51,7 +51,7 @@ export default function BlogModal({ blog, onClose }: { blog: Blog | null; onClos
           height={blog.image.height}
         />
         <div className={styles.content}>
-          {(blog.content || blog.excerpt).split(/\n{2,}/).map((para, i) => (
+          {(blog.content || 'Full article coming soon.').split(/\n{2,}/).map((para, i) => (
             <p key={i}>{para}</p>
           ))}
         </div>
