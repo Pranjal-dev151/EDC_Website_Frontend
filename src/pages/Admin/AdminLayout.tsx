@@ -26,6 +26,7 @@ export default function AdminLayout() {
       <div className={styles.topbar}>
         <span className={styles.brand}>EDC SIRT · Admin</span>
         <nav className={styles.nav} aria-label="Admin">
+          <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/blogs">Blogs</Link>
           <Link to="/admin/events">Events</Link>
           <button type="button" className={styles.buttonSecondary} onClick={onLogout}>

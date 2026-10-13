@@ -121,3 +121,108 @@ export async function deleteEvent(id: string): Promise<void> {
   const res = await authFetch(`/api/admin/events/${numericId}`, { method: 'DELETE' });
   await readJson<void>(res);
 }
+
+// --- Client-side extras: fields the backend schema ignores (blog content,
+// secondary images, event registration links) persist in localStorage. ---
+import type { ContentImage, GoogleForm } from '../types';
+
+const BLOG_EXTRAS_KEY = 'edc_blog_extras';
+const EVENT_EXTRAS_KEY = 'edc_event_extras';
+const FORMS_KEY = 'edc_admin_forms';
+
+export interface BlogExtras {
+  content?: string;
+  secondaryImages?: ContentImage[];
+}
+
+export interface EventExtras {
+  registrationLink?: string;
+  featured?: boolean;
+  status?: string;
+}
+
+function readStore<T>(key: string): Record<string, T> {
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, T>;
+  } catch {
+    return {};
+  }
+}
+
+function writeStore<T>(key: string, store: Record<string, T>): void {
+  localStorage.setItem(key, JSON.stringify(store));
+}
+
+export function getBlogExtras(id: string): BlogExtras {
+  return readStore<BlogExtras>(BLOG_EXTRAS_KEY)[id] ?? {};
+}
+
+export function setBlogExtras(id: string, extras: BlogExtras): void {
+  const store = readStore<BlogExtras>(BLOG_EXTRAS_KEY);
+  store[id] = extras;
+  writeStore(BLOG_EXTRAS_KEY, store);
+}
+
+export function clearBlogExtras(id: string): void {
+  const store = readStore<BlogExtras>(BLOG_EXTRAS_KEY);
+  delete store[id];
+  writeStore(BLOG_EXTRAS_KEY, store);
+}
+
+export function getEventExtras(id: string): EventExtras {
+  return readStore<EventExtras>(EVENT_EXTRAS_KEY)[id] ?? {};
+}
+
+export function setEventExtras(id: string, extras: EventExtras): void {
+  const store = readStore<EventExtras>(EVENT_EXTRAS_KEY);
+  store[id] = extras;
+  writeStore(EVENT_EXTRAS_KEY, store);
+}
+
+export function clearEventExtras(id: string): void {
+  const store = readStore<EventExtras>(EVENT_EXTRAS_KEY);
+  delete store[id];
+  writeStore(EVENT_EXTRAS_KEY, store);
+}
+
+// --- Google Forms: local CRUD (no backend endpoint yet). ---
+export function listForms(): GoogleForm[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(FORMS_KEY) ?? '[]') as GoogleForm[];
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+export function createForm(payload: Omit<GoogleForm, 'id' | 'createdAt'>): GoogleForm {
+  const forms = listForms();
+  const form: GoogleForm = {
+    ...payload,
+    id: `form-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+  };
+  localStorage.setItem(FORMS_KEY, JSON.stringify([form, ...forms]));
+  return form;
+}
+
+export function updateForm(id: string, payload: Omit<GoogleForm, 'id' | 'createdAt'>): GoogleForm | null {
+  const forms = listForms();
+  const next = forms.map((f) => (f.id === id ? { ...f, ...payload } : f));
+  localStorage.setItem(FORMS_KEY, JSON.stringify(next));
+  return next.find((f) => f.id === id) ?? null;
+}
+
+export function deleteForm(id: string): void {
+  localStorage.setItem(FORMS_KEY, JSON.stringify(listForms().filter((f) => f.id !== id)));
+}
+
+export const SUGGESTED_FORM_QUESTIONS = [
+  'Name',
+  'Email',
+  'Phone',
+  'College / Year',
+  'Motivation',
+  'Startup Idea',
+  'Skills',
+];

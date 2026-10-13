@@ -1,53 +1,47 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Event } from '../../types';
-import { AuthError, createEvent, deleteEvent, listEvents, updateEvent } from '../../services/adminApi';
+import {
+  AuthError,
+  clearEventExtras,
+  createEvent,
+  deleteEvent,
+  getEventExtras,
+  listEvents,
+  setEventExtras,
+  updateEvent,
+} from '../../services/adminApi';
 import styles from './Admin.module.css';
 
 interface EventForm {
   title: string;
-  slug: string;
-  summary: string;
-  category: string;
-  location: string;
   starts_at: string;
-  published: boolean;
+  location: string;
+  summary: string;
   image_url: string;
-  image_alt: string;
+  registration_link: string;
+  featured: boolean;
+  status: string;
+  published: boolean;
 }
 
 const EMPTY: EventForm = {
   title: '',
-  slug: '',
-  summary: '',
-  category: '',
-  location: '',
   starts_at: '',
-  published: true,
+  location: '',
+  summary: '',
   image_url: '',
-  image_alt: '',
+  registration_link: '',
+  featured: false,
+  status: 'Upcoming',
+  published: true,
 };
 
-function toDateTimeLocal(iso: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function toPayload(form: EventForm): Record<string, unknown> {
-  return {
-    title: form.title.trim(),
-    slug: form.slug.trim(),
-    summary: form.summary,
-    category: form.category,
-    location: form.location,
-    starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : null,
-    published: form.published,
-    image_url: form.image_url,
-    image_alt: form.image_alt,
-  };
+function displayStatus(ev: Event): string {
+  const extras = getEventExtras(ev.id);
+  if (extras.status) return extras.status;
+  if (new Date(ev.startsAt).getTime() < Date.now()) return 'Past';
+  return 'Upcoming';
 }
 
 export default function AdminEvents() {
@@ -87,33 +81,62 @@ export default function AdminEvents() {
   }
 
   function openEdit(ev: Event) {
+    const extras = getEventExtras(ev.id);
     setEditingId(ev.id);
     setForm({
       title: ev.title,
-      slug: ev.slug,
-      summary: ev.summary,
-      category: ev.category,
+      starts_at: ev.startsAt ? ev.startsAt.slice(0, 16) : '',
       location: ev.location,
-      starts_at: toDateTimeLocal(ev.startsAt),
-      published: true,
+      summary: ev.summary,
       image_url: ev.image.src,
-      image_alt: ev.image.alt,
+      registration_link: extras.registrationLink ?? '',
+      featured: extras.featured ?? false,
+      status: extras.status ?? displayStatus(ev),
+      published: true,
     });
     setFormOpen(true);
   }
 
+  function validate(f: EventForm): string | null {
+    if (!f.title.trim()) return 'Title is required.';
+    if (!f.starts_at) return 'Date/time is required.';
+    if (!f.location.trim()) return 'Location is required.';
+    if (!f.summary.trim()) return 'Short description is required.';
+    if (!f.image_url.trim()) return 'Image URL is required.';
+    return null;
+  }
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.title.trim()) {
-      setError('Title is required.');
+    const problem = validate(form);
+    if (problem) {
+      setError(problem);
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const payload = toPayload(form);
-      if (editingId) await updateEvent(editingId, payload);
-      else await createEvent(payload);
+      const payload = {
+        title: form.title.trim(),
+        summary: form.summary,
+        location: form.location.trim(),
+        starts_at: new Date(form.starts_at).toISOString(),
+        published: form.published,
+        image_url: form.image_url.trim(),
+        image_alt: form.title.trim(),
+      };
+      const extras = {
+        registrationLink: form.registration_link.trim(),
+        featured: form.featured,
+        status: form.status,
+      };
+      if (editingId) {
+        await updateEvent(editingId, payload);
+        setEventExtras(editingId, extras);
+      } else {
+        const created = await createEvent(payload);
+        setEventExtras(created.id, extras);
+      }
       setFormOpen(false);
       await load();
     } catch (err) {
@@ -131,6 +154,7 @@ export default function AdminEvents() {
     if (!window.confirm(`Delete "${ev.title}"?`)) return;
     try {
       await deleteEvent(ev.id);
+      clearEventExtras(ev.id);
       await load();
     } catch (err) {
       if (err instanceof AuthError) {
@@ -149,69 +173,60 @@ export default function AdminEvents() {
     <div className={styles.card}>
       <div className={styles.toolbar}>
         <div>
-          <h1 className={styles.title}>Events</h1>
+          <h2 className={styles.title}>Events</h2>
           <p className={styles.subtitle}>Create, edit, and delete events.</p>
         </div>
         <button type="button" className={styles.button} onClick={openNew}>
-          New event
+          New Event
         </button>
       </div>
 
-      {error && (
-        <p role="alert" className={styles.error}>
-          {error}
-        </p>
-      )}
-      {status && (
-        <p role="status" className={styles.status}>
-          {status}
-        </p>
-      )}
+      {error && <p role="alert" className={styles.error}>{error}</p>}
+      {status && <p role="status" className={styles.status}>{status}</p>}
 
       {formOpen && (
         <form className={styles.form} onSubmit={onSave} aria-label="Event form">
           <div className={styles.field}>
-            <label htmlFor="event-title">Title</label>
+            <label htmlFor="event-title">Title *</label>
             <input id="event-title" value={form.title} onChange={(e) => set('title', e.target.value)} required />
           </div>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label htmlFor="event-slug">Slug (optional)</label>
-              <input id="event-slug" value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder="auto from title" />
+              <label htmlFor="event-starts">Date/Time *</label>
+              <input id="event-starts" type="datetime-local" value={form.starts_at} onChange={(e) => set('starts_at', e.target.value)} required />
             </div>
             <div className={styles.field}>
-              <label htmlFor="event-category">Category</label>
-              <input id="event-category" value={form.category} onChange={(e) => set('category', e.target.value)} />
+              <label htmlFor="event-location">Location *</label>
+              <input id="event-location" value={form.location} onChange={(e) => set('location', e.target.value)} required />
             </div>
           </div>
           <div className={styles.field}>
-            <label htmlFor="event-summary">Summary</label>
-            <textarea id="event-summary" value={form.summary} onChange={(e) => set('summary', e.target.value)} rows={3} />
+            <label htmlFor="event-summary">Short Description *</label>
+            <textarea id="event-summary" value={form.summary} onChange={(e) => set('summary', e.target.value)} rows={3} required />
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="event-image-url">Image URL *</label>
+            <input id="event-image-url" value={form.image_url} onChange={(e) => set('image_url', e.target.value)} required />
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="event-reg">Registration Link (optional)</label>
+            <input id="event-reg" type="url" value={form.registration_link} onChange={(e) => set('registration_link', e.target.value)} placeholder="https://…" />
           </div>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label htmlFor="event-location">Location</label>
-              <input id="event-location" value={form.location} onChange={(e) => set('location', e.target.value)} />
+              <label htmlFor="event-status">Status (optional)</label>
+              <select id="event-status" value={form.status} onChange={(e) => set('status', e.target.value)}>
+                <option value="Upcoming">Upcoming</option>
+                <option value="Ongoing">Ongoing</option>
+                <option value="Past">Past</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
             </div>
-            <div className={styles.field}>
-              <label htmlFor="event-starts">Starts at</label>
-              <input id="event-starts" type="datetime-local" value={form.starts_at} onChange={(e) => set('starts_at', e.target.value)} />
-            </div>
+            <label className={styles.check} htmlFor="event-featured">
+              <input id="event-featured" type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
+              Featured
+            </label>
           </div>
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor="event-image-url">Image URL</label>
-              <input id="event-image-url" value={form.image_url} onChange={(e) => set('image_url', e.target.value)} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="event-image-alt">Image alt</label>
-              <input id="event-image-alt" value={form.image_alt} onChange={(e) => set('image_alt', e.target.value)} />
-            </div>
-          </div>
-          <label className={styles.check} htmlFor="event-published">
-            <input id="event-published" type="checkbox" checked={form.published} onChange={(e) => set('published', e.target.checked)} />
-            Published
-          </label>
           <div className={styles.actions}>
             <button type="submit" className={styles.button} disabled={saving}>
               {saving ? 'Saving…' : editingId ? 'Save changes' : 'Create event'}
@@ -228,8 +243,9 @@ export default function AdminEvents() {
           <thead>
             <tr>
               <th scope="col">Title</th>
-              <th scope="col">Category</th>
               <th scope="col">Date</th>
+              <th scope="col">Location</th>
+              <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -237,24 +253,19 @@ export default function AdminEvents() {
             {events.map((ev) => (
               <tr key={ev.id}>
                 <td>{ev.title}</td>
-                <td>{ev.category}</td>
                 <td>{new Date(ev.startsAt).toLocaleDateString()}</td>
+                <td>{ev.location}</td>
+                <td>{displayStatus(ev)}</td>
                 <td>
                   <div className={styles.actions}>
-                    <button type="button" className={styles.buttonSecondary} onClick={() => openEdit(ev)}>
-                      Edit
-                    </button>
-                    <button type="button" className={styles.buttonSecondary} onClick={() => void onDelete(ev)}>
-                      Delete
-                    </button>
+                    <button type="button" className={styles.buttonSecondary} onClick={() => openEdit(ev)}>Edit</button>
+                    <button type="button" className={styles.buttonSecondary} onClick={() => void onDelete(ev)}>Delete</button>
                   </div>
                 </td>
               </tr>
             ))}
             {events.length === 0 && !status && (
-              <tr>
-                <td colSpan={4}>No events yet.</td>
-              </tr>
+              <tr><td colSpan={5}>No events yet.</td></tr>
             )}
           </tbody>
         </table>

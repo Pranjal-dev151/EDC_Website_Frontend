@@ -16,7 +16,7 @@ export default function AdminLogin() {
     setLoading(true);
     try {
       await loginAdmin(email.trim(), password);
-      navigate('/admin/blogs', { replace: true });
+      navigate('/admin/dashboard', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed.');
     } finally {

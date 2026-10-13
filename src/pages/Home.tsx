@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AboutSection from '../components/AboutSection/AboutSection';
 import BlogCard from '../components/BlogCard/BlogCard';
+import BlogModal from '../components/BlogModal/BlogModal';
+import type { Blog } from '../types';
 import ContactSection from '../components/ContactSection/ContactSection';
 import EventCarousel from '../components/EventCarousel/EventCarousel';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -20,6 +23,7 @@ export default function Home() {
   const { data: blogs } = useContent(getBlogs);
 
   const featured = blogs?.filter((b) => b.featured).slice(0, 3) ?? [];
+  const [openBlog, setOpenBlog] = useState<Blog | null>(null);
 
   // Fallback hero content while settings load
   const hero = settings?.hero ?? {
@@ -75,7 +79,7 @@ export default function Home() {
             <div className={styles.gridBlogs}>
               {featured.map((blog, i) => (
                 <Reveal key={blog.id} delay={i * 0.06}>
-                  <BlogCard blog={blog} />
+                  <BlogCard blog={blog} onOpen={setOpenBlog} />
                 </Reveal>
               ))}
             </div>
@@ -84,6 +88,7 @@ export default function Home() {
           )}
         </section>
       </ErrorBoundary>
+      <BlogModal blog={openBlog} onClose={() => setOpenBlog(null)} />
 
       <ErrorBoundary name="ContactSection">
         <ContactSection />

@@ -1,59 +1,63 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Blog } from '../../types';
-import { AuthError, createBlog, deleteBlog, listBlogs, updateBlog } from '../../services/adminApi';
+import DropzoneField from '../../components/DropzoneField/DropzoneField';
+import type { Blog, ContentImage } from '../../types';
+import {
+  AuthError,
+  clearBlogExtras,
+  createBlog,
+  deleteBlog,
+  getBlogExtras,
+  listBlogs,
+  setBlogExtras,
+  updateBlog,
+} from '../../services/adminApi';
 import styles from './Admin.module.css';
 
 interface BlogForm {
   title: string;
-  slug: string;
-  excerpt: string;
   author: string;
+  excerpt: string;
+  published_at: string;
   category: string;
-  reading_minutes: string;
+  content: string;
+  primaryImage: string[];
+  slug: string;
+  image_alt: string;
   featured: boolean;
   published: boolean;
-  published_at: string;
-  image_url: string;
-  image_alt: string;
+  secondaryImages: string[];
 }
 
 const EMPTY: BlogForm = {
   title: '',
-  slug: '',
-  excerpt: '',
   author: '',
+  excerpt: '',
+  published_at: '',
   category: '',
-  reading_minutes: '5',
+  content: '',
+  primaryImage: [],
+  slug: '',
+  image_alt: '',
   featured: false,
   published: true,
-  published_at: '',
-  image_url: '',
-  image_alt: '',
+  secondaryImages: [],
 };
 
-function toDateTimeLocal(iso: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function toImage(src: string, alt: string): ContentImage {
+  return { src, alt, width: 800, height: 520, srcSet: src, sizes: '(min-width: 1024px) 33vw, 100vw' };
 }
 
-function toPayload(form: BlogForm): Record<string, unknown> {
-  return {
-    title: form.title.trim(),
-    slug: form.slug.trim(),
-    excerpt: form.excerpt,
-    author: form.author,
-    category: form.category,
-    reading_minutes: Number.parseInt(form.reading_minutes, 10) || 5,
-    featured: form.featured,
-    published: form.published,
-    published_at: form.published_at ? new Date(form.published_at).toISOString() : null,
-    image_url: form.image_url,
-    image_alt: form.image_alt,
-  };
+function withExtras(blogs: Blog[]): Blog[] {
+  return blogs.map((b) => {
+    const extras = getBlogExtras(b.id);
+    return {
+      ...b,
+      content: extras.content,
+      secondaryImages: extras.secondaryImages,
+      image: extras && b.image.src ? b.image : b.image,
+    };
+  });
 }
 
 export default function AdminBlogs() {
@@ -70,7 +74,7 @@ export default function AdminBlogs() {
     setStatus('Loading…');
     setError(null);
     try {
-      setBlogs(await listBlogs());
+      setBlogs(withExtras(await listBlogs()));
       setStatus('');
     } catch (err) {
       if (err instanceof AuthError) {
@@ -93,35 +97,69 @@ export default function AdminBlogs() {
   }
 
   function openEdit(blog: Blog) {
+    const extras = getBlogExtras(blog.id);
     setEditingId(blog.id);
     setForm({
       title: blog.title,
-      slug: blog.slug,
-      excerpt: blog.excerpt,
       author: blog.author,
+      excerpt: blog.excerpt,
+      published_at: blog.publishedAt ? blog.publishedAt.slice(0, 16) : '',
       category: blog.category,
-      reading_minutes: String(blog.readingMinutes),
+      content: extras.content ?? '',
+      primaryImage: blog.image.src ? [blog.image.src] : [],
+      slug: blog.slug,
+      image_alt: blog.image.alt,
       featured: blog.featured,
       published: true,
-      published_at: toDateTimeLocal(blog.publishedAt),
-      image_url: blog.image.src,
-      image_alt: blog.image.alt,
+      secondaryImages: (extras.secondaryImages ?? []).map((i) => i.src),
     });
     setFormOpen(true);
   }
 
+  function validate(f: BlogForm): string | null {
+    if (!f.title.trim()) return 'Title is required.';
+    if (!f.author.trim()) return 'Author is required.';
+    if (!f.excerpt.trim()) return 'Excerpt is required.';
+    if (!f.published_at) return 'Publish date is required.';
+    if (!f.category.trim()) return 'Category is required.';
+    if (!f.content.trim()) return 'Blog content is required.';
+    if (f.primaryImage.length === 0) return 'Primary image is required.';
+    return null;
+  }
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.title.trim()) {
-      setError('Title is required.');
+    const problem = validate(form);
+    if (problem) {
+      setError(problem);
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const payload = toPayload(form);
-      if (editingId) await updateBlog(editingId, payload);
-      else await createBlog(payload);
+      const payload = {
+        title: form.title.trim(),
+        slug: form.slug.trim(),
+        excerpt: form.excerpt,
+        author: form.author.trim(),
+        category: form.category.trim(),
+        published_at: new Date(form.published_at).toISOString(),
+        featured: form.featured,
+        published: form.published,
+        image_url: form.primaryImage[0],
+        image_alt: form.image_alt,
+      };
+      const extras = {
+        content: form.content,
+        secondaryImages: form.secondaryImages.map((src) => toImage(src, form.title)),
+      };
+      if (editingId) {
+        await updateBlog(editingId, payload);
+        setBlogExtras(editingId, extras);
+      } else {
+        const created = await createBlog(payload);
+        setBlogExtras(created.id, extras);
+      }
       setFormOpen(false);
       await load();
     } catch (err) {
@@ -139,6 +177,7 @@ export default function AdminBlogs() {
     if (!window.confirm(`Delete "${blog.title}"?`)) return;
     try {
       await deleteBlog(blog.id);
+      clearBlogExtras(blog.id);
       await load();
     } catch (err) {
       if (err instanceof AuthError) {
@@ -157,69 +196,55 @@ export default function AdminBlogs() {
     <div className={styles.card}>
       <div className={styles.toolbar}>
         <div>
-          <h1 className={styles.title}>Blogs</h1>
+          <h2 className={styles.title}>Blogs</h2>
           <p className={styles.subtitle}>Create, edit, and delete blog posts.</p>
         </div>
         <button type="button" className={styles.button} onClick={openNew}>
-          New blog
+          New Blog
         </button>
       </div>
 
-      {error && (
-        <p role="alert" className={styles.error}>
-          {error}
-        </p>
-      )}
-      {status && (
-        <p role="status" className={styles.status}>
-          {status}
-        </p>
-      )}
+      {error && <p role="alert" className={styles.error}>{error}</p>}
+      {status && <p role="status" className={styles.status}>{status}</p>}
 
       {formOpen && (
         <form className={styles.form} onSubmit={onSave} aria-label="Blog form">
           <div className={styles.field}>
-            <label htmlFor="blog-title">Title</label>
+            <label htmlFor="blog-title">Title *</label>
             <input id="blog-title" value={form.title} onChange={(e) => set('title', e.target.value)} required />
           </div>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label htmlFor="blog-slug">Slug (optional)</label>
-              <input id="blog-slug" value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder="auto from title" />
+              <label htmlFor="blog-author">Author *</label>
+              <input id="blog-author" value={form.author} onChange={(e) => set('author', e.target.value)} required />
             </div>
             <div className={styles.field}>
-              <label htmlFor="blog-author">Author</label>
-              <input id="blog-author" value={form.author} onChange={(e) => set('author', e.target.value)} />
+              <label htmlFor="blog-category">Category *</label>
+              <input id="blog-category" value={form.category} onChange={(e) => set('category', e.target.value)} required />
             </div>
           </div>
           <div className={styles.field}>
-            <label htmlFor="blog-excerpt">Excerpt</label>
-            <textarea id="blog-excerpt" value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} rows={3} />
-          </div>
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor="blog-category">Category</label>
-              <input id="blog-category" value={form.category} onChange={(e) => set('category', e.target.value)} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="blog-reading">Reading minutes</label>
-              <input id="blog-reading" type="number" min={1} value={form.reading_minutes} onChange={(e) => set('reading_minutes', e.target.value)} />
-            </div>
-          </div>
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor="blog-published-at">Published at</label>
-              <input id="blog-published-at" type="datetime-local" value={form.published_at} onChange={(e) => set('published_at', e.target.value)} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="blog-image-url">Image URL</label>
-              <input id="blog-image-url" value={form.image_url} onChange={(e) => set('image_url', e.target.value)} />
-            </div>
+            <label htmlFor="blog-excerpt">Excerpt *</label>
+            <textarea id="blog-excerpt" value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} rows={3} required />
           </div>
           <div className={styles.field}>
-            <label htmlFor="blog-image-alt">Image alt</label>
-            <input id="blog-image-alt" value={form.image_alt} onChange={(e) => set('image_alt', e.target.value)} />
+            <label htmlFor="blog-date">Publish Date *</label>
+            <input id="blog-date" type="datetime-local" value={form.published_at} onChange={(e) => set('published_at', e.target.value)} required />
           </div>
+          <div className={styles.field}>
+            <label htmlFor="blog-content">Blog Content *</label>
+            <textarea id="blog-content" value={form.content} onChange={(e) => set('content', e.target.value)} rows={8} required />
+          </div>
+          <DropzoneField id="blog-primary" label="Primary Image *" value={form.primaryImage} onChange={(v) => set('primaryImage', v)} hint="One image — shown on the card and at the top of the article." />
+          <div className={styles.field}>
+            <label htmlFor="blog-slug">Slug (optional)</label>
+            <input id="blog-slug" value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder="auto from title" />
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="blog-alt">Image Alt (optional)</label>
+            <input id="blog-alt" value={form.image_alt} onChange={(e) => set('image_alt', e.target.value)} />
+          </div>
+          <DropzoneField id="blog-secondary" label="Secondary Images (optional)" multiple value={form.secondaryImages} onChange={(v) => set('secondaryImages', v)} hint="Shown in the article gallery." />
           <div className={styles.row}>
             <label className={styles.check} htmlFor="blog-featured">
               <input id="blog-featured" type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
@@ -246,8 +271,8 @@ export default function AdminBlogs() {
           <thead>
             <tr>
               <th scope="col">Title</th>
-              <th scope="col">Category</th>
               <th scope="col">Date</th>
+              <th scope="col">Category</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -255,24 +280,18 @@ export default function AdminBlogs() {
             {blogs.map((b) => (
               <tr key={b.id}>
                 <td>{b.title}</td>
-                <td>{b.category}</td>
                 <td>{new Date(b.publishedAt).toLocaleDateString()}</td>
+                <td>{b.category}</td>
                 <td>
                   <div className={styles.actions}>
-                    <button type="button" className={styles.buttonSecondary} onClick={() => openEdit(b)}>
-                      Edit
-                    </button>
-                    <button type="button" className={styles.buttonSecondary} onClick={() => void onDelete(b)}>
-                      Delete
-                    </button>
+                    <button type="button" className={styles.buttonSecondary} onClick={() => openEdit(b)}>Edit</button>
+                    <button type="button" className={styles.buttonSecondary} onClick={() => void onDelete(b)}>Delete</button>
                   </div>
                 </td>
               </tr>
             ))}
             {blogs.length === 0 && !status && (
-              <tr>
-                <td colSpan={4}>No blogs yet.</td>
-              </tr>
+              <tr><td colSpan={4}>No blogs yet.</td></tr>
             )}
           </tbody>
         </table>

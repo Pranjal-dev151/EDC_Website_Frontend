@@ -1,0 +1,12 @@
+.wrap { display: grid; gap: var(--space-2); }
+.label { font-size: var(--text-sm); color: var(--color-secondary); }
+.dropzone { border: 1px dashed var(--color-border-strong); border-radius: var(--radius-card); background: var(--color-bg); padding: var(--space-5); text-align: center; cursor: pointer; min-block-size: 96px; display: grid; gap: var(--space-2); align-content: center; }
+.dropzone p { margin: 0; font-size: var(--text-sm); color: var(--color-secondary); }
+.dropActive { border-color: var(--color-accent); background: var(--color-surface); }
+.hint { font-size: var(--text-xs); color: var(--color-muted); }
+.error { color: #ff8a8a; font-size: var(--text-sm); }
+.thumbSingle { display: grid; }
+.thumbGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: var(--space-2); }
+.thumb { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-bg); }
+.thumb img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.thumbRemove { position: absolute; inset-block-start: 4px; inset-inline-end: 4px; inline-size: 28px; block-size: 28px; min-block-size: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: rgb(0 0 0 / 70%); color: #fff; border: 1px solid var(--color-border-strong); font-size: 16px; line-height: 1; padding: 0; }

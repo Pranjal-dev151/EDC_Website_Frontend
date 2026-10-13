@@ -26,6 +26,9 @@ export interface Event {
   category: string;
   image: ContentImage;
   href: string;
+  registrationLink?: string;
+  status?: string;
+  featured?: boolean;
 }
 
 export interface Blog {
@@ -40,6 +43,19 @@ export interface Blog {
   featured: boolean;
   image: ContentImage;
   href: string;
+  content?: string;
+  secondaryImages?: ContentImage[];
+}
+
+export interface GoogleForm {
+  id: string;
+  name: string;
+  url: string;
+  eventId: string;
+  eventTitle: string;
+  description?: string;
+  active: boolean;
+  createdAt: string;
 }
 
 export interface GalleryItem {

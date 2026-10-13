@@ -12,6 +12,7 @@ import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminLogin from './pages/Admin/AdminLogin';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminLayout from './pages/Admin/AdminLayout';
 import AdminBlogs from './pages/Admin/AdminBlogs';
 import AdminEvents from './pages/Admin/AdminEvents';
@@ -57,8 +58,9 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/blogs" replace />} />
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="blogs" element={<AdminBlogs />} />
             <Route path="events" element={<AdminEvents />} />
           </Route>

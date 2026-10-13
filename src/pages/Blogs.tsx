@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import BlogCard from '../components/BlogCard/BlogCard';
+import BlogModal from '../components/BlogModal/BlogModal';
 import { useContent } from '../hooks/useContent';
 import { getBlogs } from '../services/api';
+import type { Blog } from '../types';
 import styles from './Blogs.module.css';
 
 export default function Blogs() {
   const { data, error, loading } = useContent(getBlogs);
   const [filter, setFilter] = useState('All');
+  const [openBlog, setOpenBlog] = useState<Blog | null>(null);
 
   useEffect(() => {
     if (error) console.error(error);
@@ -39,8 +42,9 @@ export default function Blogs() {
         ))}
       </div>
       <div className={styles.grid}>
-        {filtered.map((blog) => <BlogCard key={blog.id} blog={blog} />)}
+        {filtered.map((blog) => <BlogCard key={blog.id} blog={blog} onOpen={setOpenBlog} />)}
       </div>
+      <BlogModal blog={openBlog} onClose={() => setOpenBlog(null)} />
     </div>
   );
 }

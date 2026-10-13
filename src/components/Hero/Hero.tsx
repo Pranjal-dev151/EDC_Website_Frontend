@@ -66,6 +66,16 @@ export default function Hero({ eyebrow, title, description, primaryLink, seconda
             </button>
           </div>
         </div>
+        <div className={styles.heroVisual} aria-hidden="true">
+          <img
+            className={styles.heroLogo}
+            src="/edc-logo.svg"
+            alt=""
+            width={725}
+            height={344}
+            draggable={false}
+          />
+        </div>
       </div>
     </section>
   );
