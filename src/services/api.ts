@@ -81,6 +81,7 @@ function withBlogExtras(list: Blog[]): Blog[] {
       ...b,
       excerpt: b.excerpt ?? '',
       content: extras.content ?? b.content,
+      linkedin_url: extras.linkedin_url ?? b.linkedin_url,
       secondaryImages: extras.secondaryImages ?? b.secondaryImages,
     };
   });
@@ -128,4 +129,23 @@ export async function getFooterData(signal?: AbortSignal): Promise<FooterData> {
 // Remote content transport is introduced with the content sections, not auth forms.
 export async function getHeaderContentLegacy(): Promise<HeaderContent> {
   return headerContent;
+}
+
+export async function getBlogBySlug(slug: string, signal?: AbortSignal): Promise<Blog> {
+  const s = signal ?? new AbortController().signal;
+  if (!API_URL) {
+    const match = withBlogExtras(blogs).find((b) => b.slug === slug);
+    if (!match) throw new Error('Blog not found');
+    return match;
+  }
+  const res = await fetch(`${API_URL.replace(/\/$/, '')}/api/blogs/${slug}`, { signal: s });
+  if (!res.ok) throw new Error(res.status === 404 ? 'Blog not found' : 'Failed to load blog');
+  const blog = (await res.json()) as Blog;
+  const extras = getBlogExtras(blog.id);
+  return {
+    ...blog,
+    content: extras.content ?? blog.content,
+    linkedin_url: extras.linkedin_url ?? blog.linkedin_url,
+    secondaryImages: extras.secondaryImages ?? blog.secondaryImages,
+  };
 }

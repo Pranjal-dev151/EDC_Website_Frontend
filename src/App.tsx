@@ -7,6 +7,7 @@ import { useContent } from './hooks/useContent';
 import { getFooterData, getHeaderContent, getSocials } from './services/api';
 import Home from './pages/Home';
 import Blogs from './pages/Blogs';
+import BlogDetail from './pages/BlogDetail';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
@@ -25,7 +26,8 @@ export default function App() {
 
   useLayoutEffect(() => {
     const names: Record<string, string> = { '/': 'Home', '/blogs': 'Blogs', '/gallery': 'Gallery', '/contact': 'Contact', '/login': 'Login', '/register': 'Register', '/admin/login': 'Admin Login', '/admin/blogs': 'Admin · Blogs', '/admin/events': 'Admin · Events' };
-    document.title = `${names[pathname] ?? 'Page not found'} | EDC SIRT`;
+    const fallbackTitle = pathname.startsWith('/blogs/') ? 'Blog' : (names[pathname] ?? 'Page not found');
+    document.title = `${fallbackTitle} | EDC SIRT`;
     // Wait until route markup and any closing drawer scroll lock are reconciled.
     const frame = window.requestAnimationFrame(() => {
       let anchor = '';
@@ -53,6 +55,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/:slug" element={<BlogDetail />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />

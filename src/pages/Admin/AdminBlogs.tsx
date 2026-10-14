@@ -21,6 +21,7 @@ interface BlogForm {
   published_at: string;
   category: string;
   content: string;
+  linkedin_url: string;
   primaryImage: string[];
   slug: string;
   image_alt: string;
@@ -36,6 +37,7 @@ const EMPTY: BlogForm = {
   published_at: '',
   category: '',
   content: '',
+  linkedin_url: '',
   primaryImage: [],
   slug: '',
   image_alt: '',
@@ -54,6 +56,7 @@ function withExtras(blogs: Blog[]): Blog[] {
     return {
       ...b,
       content: extras.content,
+      linkedin_url: extras.linkedin_url ?? b.linkedin_url,
       secondaryImages: extras.secondaryImages,
       image: extras && b.image.src ? b.image : b.image,
     };
@@ -106,6 +109,7 @@ export default function AdminBlogs() {
       published_at: blog.publishedAt ? blog.publishedAt.slice(0, 16) : '',
       category: blog.category,
       content: extras.content ?? '',
+      linkedin_url: extras.linkedin_url ?? blog.linkedin_url ?? '',
       primaryImage: blog.image.src ? [blog.image.src] : [],
       slug: blog.slug,
       image_alt: blog.image.alt,
@@ -140,6 +144,8 @@ export default function AdminBlogs() {
         title: form.title.trim(),
         slug: form.slug.trim(),
         excerpt: form.excerpt,
+        content: form.content,
+        linkedin_url: form.linkedin_url.trim() || null,
         author: form.author.trim(),
         category: form.category.trim(),
         published_at: new Date(form.published_at).toISOString(),
@@ -150,6 +156,7 @@ export default function AdminBlogs() {
       };
       const extras = {
         content: form.content,
+        linkedin_url: form.linkedin_url.trim() || undefined,
         secondaryImages: form.secondaryImages.map((src) => toImage(src, form.title)),
       };
       if (editingId) {
@@ -231,8 +238,14 @@ export default function AdminBlogs() {
             <input id="blog-date" type="datetime-local" value={form.published_at} onChange={(e) => set('published_at', e.target.value)} required />
           </div>
           <div className={styles.field}>
-            <label htmlFor="blog-content">Blog Content *</label>
-            <textarea id="blog-content" value={form.content} onChange={(e) => set('content', e.target.value)} rows={8} required />
+            <label htmlFor="blog-content">Full content</label>
+            <textarea id="blog-content" name="content" value={form.content} onChange={(e) => set('content', e.target.value)} rows={12} required />
+            <small className={styles.status}>Separate paragraphs with a blank line.</small>
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="blog-linkedin">LinkedIn post URL</label>
+            <input id="blog-linkedin" name="linkedin_url" type="url" value={form.linkedin_url} onChange={(e) => set('linkedin_url', e.target.value)} placeholder="https://www.linkedin.com/posts/…" />
+            <small className={styles.status}>Optional. Shown as &lsquo;View on LinkedIn&rsquo;.</small>
           </div>
           <DropzoneField id="blog-primary" label="Primary Image *" value={form.primaryImage} onChange={(v) => set('primaryImage', v)} hint="One image — shown on the card and at the top of the article." />
           <div className={styles.field}>

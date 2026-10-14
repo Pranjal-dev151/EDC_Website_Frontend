@@ -132,6 +132,7 @@ const FORMS_KEY = 'edc_admin_forms';
 
 export interface BlogExtras {
   content?: string;
+  linkedin_url?: string;
   secondaryImages?: ContentImage[];
 }
 

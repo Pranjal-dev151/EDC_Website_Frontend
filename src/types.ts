@@ -44,6 +44,7 @@ export interface Blog {
   image: ContentImage;
   href: string;
   content?: string;
+  linkedin_url?: string;
   secondaryImages?: ContentImage[];
 }
 
