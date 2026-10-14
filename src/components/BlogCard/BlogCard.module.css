@@ -15,6 +15,12 @@
 .body h3 a { min-block-size: 0; text-decoration: none; color: inherit; }
 .body h3 a:hover { color: var(--color-accent); }
 .author { color: var(--color-muted); font-size: var(--text-xs); font-family: var(--font-mono); }
+.date {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
 .actions { display: flex; gap: var(--space-3); margin-block-start: var(--space-3); flex-wrap: wrap; }
 .viewMore {
   display: inline-flex; align-items: center; gap: 6px;

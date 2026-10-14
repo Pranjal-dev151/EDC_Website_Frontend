@@ -4,12 +4,13 @@ import { getBlogBySlug } from '../services/api';
 import type { Blog } from '../types';
 import styles from './BlogDetail.module.css';
 
-function formatDate(value: string) {
-  try {
-    return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
-  } catch {
-    return value;
-  }
+function formatDate(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 export default function BlogDetail() {

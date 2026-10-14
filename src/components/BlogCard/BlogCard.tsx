@@ -2,6 +2,15 @@ import { Link } from 'react-router-dom';
 import type { Blog } from '../../types';
 import styles from './BlogCard.module.css';
 
+function formatDate(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 export default function BlogCard({ blog }: { blog: Blog; onOpen?: (blog: Blog) => void }) {
   return (
     <article className={styles.card}>
@@ -12,6 +21,7 @@ export default function BlogCard({ blog }: { blog: Blog; onOpen?: (blog: Blog) =
         <h3>
           <Link to={`/blogs/${blog.slug}`}>{blog.title}</Link>
         </h3>
+        <p className={styles.date}>{formatDate(blog.publishedAt)}</p>
         <p className={styles.author}>Written by {blog.author}</p>
         <div className={styles.actions}>
           <Link to={`/blogs/${blog.slug}`} className={styles.viewMore}>View More</Link>
